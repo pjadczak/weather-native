@@ -1,5 +1,20 @@
 import { combineReducers } from 'redux';
 import { ADD_DATA_WAEATHER, SET_CURRENT, SET_CURRENT_NOW, SET_GPS_PERISSION, SET_LOCATION_NAME, SET_LANG, SET_POSITION, SET_FULL_STATE } from './types';
+import { CurrentDataType } from './interfaces';
+
+export const defaultCurrentData: CurrentDataType = {
+    temperature: null,
+    wind: null,
+    cloudy: null,
+    pressure: null,
+    humidity: null,
+    snow: null,
+    snowdepth: null,
+    feelslike: null,
+    icon: null,
+    hours: [],
+    datetime: ''
+}
 
 const INITIAL_STATE_WEATHER = {
     weatherData: {
@@ -17,19 +32,7 @@ const INITIAL_STATE_WEATHER = {
         }
     },
     actualIndexData: -1,// actual weather index data from currentConditions
-    current: {
-      temperature: null,
-      wind: null,
-      cloudy: null,
-      pressure: null,
-      humidity: null,
-      snow: null,
-      snowdepth: null,
-      feelslike: null,
-      icon: null,
-      hours: [],
-      datetime: ''
-    },
+    current: defaultCurrentData,
     gpsPermission: null,
     position: null,
     locationName: '',

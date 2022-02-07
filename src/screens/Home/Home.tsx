@@ -1,7 +1,7 @@
 import { View, StyleSheet, SafeAreaView, ScrollView, TouchableHighlight, Dimensions, RefreshControl, Alert, BackHandler } from 'react-native';
 import Icon from 'react-native-vector-icons/dist/MaterialCommunityIcons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
-import React , { useState, useEffect, useRef } from 'react';
+import React , { useEffect, useRef, useReducer } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import { LineChart } from "react-native-chart-kit";
 import { bindActionCreators } from 'redux';
@@ -20,8 +20,7 @@ import { getWord } from '../../actions/dictionary';
 import { getDayName } from '../../actions/helper';
 import Text from '../../components/Text/Text';
 import DaysView from './DaysView/DaysView';
-
-const { width, height } = Dimensions.get('screen');
+import Store from './Store';
 
 export interface PropsHome extends PropsWeather {
     addData: (position: object, actualCity: object, dataType: String, dataWeather: object, dayIndex?: number|null) => void;
@@ -29,26 +28,45 @@ export interface PropsHome extends PropsWeather {
     setDataCurrentNow: () => void;
 };
 
+export type LocalStateType = {
+    readingPermissions: boolean,
+    daysDataTemperatures: number[],
+    reload: number,
+    changed: boolean,
+    currentName: string,
+    indexSwiper: number,
+    currentData: CurrentDataType
+}
+
+const { width, height } = Dimensions.get('screen');
+const defaultLocalState: LocalStateType = {
+    readingPermissions: false,
+    daysDataTemperatures: [],
+    reload: 0,
+    changed: true,
+    currentName: '',
+    indexSwiper: 0,
+    currentData: null
+}
+
 const days = 4;
 
 const Home: React.FC<PropsHome> = ({ weather:state, addData, setDataCurrent, setDataCurrentNow }) => {
 
     const _ = getWord;
-    const [readingPermissions, setReadingPermissions] = useState(false);
-    const [daysDataTemperatures, setDaysDataTemperatures] = useState([]);
-    const [currentData, setSurrentData] = useState<CurrentDataType>(state.current);
-    const [reload, setReload] = useState(0);
-    const [changed, setChanged] = useState(true);
-    const [currentName, setCurrentName] = useState('');
-    const [indexSwiper, setIndexSwiper] = useState(0);
+    const [localState, setLocalState] = useReducer(Store, {...defaultLocalState, currentData: state.current });
     const navigation = useNavigation<any>();
     const isFocused = useIsFocused();
     const ref = useRef<any>();
 
     useEffect(() => {
+        realoadData();
+    },[]);
+
+    useEffect(() => {
         if (isFocused){
             const onBackPress = () => {
-                if (indexSwiper === 1){
+                if (localState.indexSwiper === 1){
                     ref.current.scrollTo(0);
                 } else if (state.actualIndexData >= 0){
                     setDataCurrentNow();
@@ -63,22 +81,22 @@ const Home: React.FC<PropsHome> = ({ weather:state, addData, setDataCurrent, set
             return () =>
             BackHandler.removeEventListener('hardwareBackPress', onBackPress);
         }
-    },[isFocused, state.actualIndexData, indexSwiper]);
+    },[isFocused, state.actualIndexData, localState.indexSwiper]);
 
     useEffect(() => {
         if (state.actualIndexData < 0){
-            setCurrentName(_(state.lang,'Teraz'));
+            setStateData('currentName', _(state.lang,'Teraz'));
         } else {
             const dayName = getDayName(state.actualIndexData);
-            setCurrentName(_(state.lang,dayName[0]) + (dayName[1] ? dayName[1] : ''));
+            setStateData('currentName', _(state.lang,dayName[0]) + (dayName[1] ? dayName[1] : ''));
         }
-    },[currentData, state.lang]);
+    },[localState.currentData, state.lang]);
 
     useEffect(() => {
 
-        realoadData();
+        if (localState.reload>0) realoadData();
 
-    },[reload]);
+    },[localState.reload]);
 
     useEffect(() => {
         const tempData = [];
@@ -88,21 +106,26 @@ const Home: React.FC<PropsHome> = ({ weather:state, addData, setDataCurrent, set
                 else tempData.push(data.temp);
             });
         });
-        setDaysDataTemperatures(tempData);
+        setStateData('daysDataTemperatures', tempData);
     },[state.weatherData.days]);
 
     useEffect(() => {
-        setChanged(false);
+        setStateData('changed',false);
         setTimeout(() => {
-            setSurrentData(state.current);
-            setChanged(true);
+            setStateData('currentData',state.current);
+            setStateData('changed',true);
         },400);
     },[state.current]);
 
+    // set local state
+    const setStateData = (dataType: string, data: any ): void => {
+        setLocalState({ type: 'SET_DATA', dataType, data });
+    }
+
     const realoadData = () => {
-        setReadingPermissions(true);
+        setStateData('readingPermissions',true);
         setDataWeather(state.dataType === 'city', state.actualCity ? state.actualCity.shortName : '', state.position, state.actualCity, addData, (result: number) => {
-            setReadingPermissions(false);
+            setStateData('readingPermissions',false);
             if (result === 0){
                 Alert.alert(_(state.lang,'Nie znalazłem miejscowości'));
             }
@@ -132,13 +155,13 @@ const Home: React.FC<PropsHome> = ({ weather:state, addData, setDataCurrent, set
                 colors={backgroundColors}
                 style={style.main}
             >
-                <Swiper loop={false} autoplay={false} showsButtons={false} showsPagination={false} ref={ref} index={indexSwiper} onIndexChanged={index => setIndexSwiper(index)}>
+                <Swiper loop={false} autoplay={false} showsButtons={false} showsPagination={false} ref={ref} index={localState.indexSwiper} onIndexChanged={index => setStateData('indexSwiper',index)}>
                     <ScrollView 
                         contentContainerStyle={style.bodyScroll} 
                         refreshControl={
                             <RefreshControl
-                                refreshing={readingPermissions}
-                                onRefresh={() => setReload(old => old + 1)}
+                                refreshing={localState.readingPermissions}
+                                onRefresh={() => setLocalState({ type: 'RELOAD' })}
                             />
                         }
                     >
@@ -156,28 +179,28 @@ const Home: React.FC<PropsHome> = ({ weather:state, addData, setDataCurrent, set
                         <View style={style.body}>
                             {state.weatherData.days.length > 0 && 
                                 <>
-                                    <MotiView from={{ opacity: changed ? 0 : 1, top: changed ? -30 : 0 }} animate={{ opacity: changed ? 1 : 0, top: changed ? 0 : -30 }} transition={{ type: 'timing', delay: 20 }}>
-                                        <Text numberOfLines={1} style={{...style.today, ...(state.actualIndexData < 0 ? style.todayNow : {})}}>{currentName}</Text>
+                                    <MotiView from={{ opacity: localState.changed ? 0 : 1, top: localState.changed ? -30 : 0 }} animate={{ opacity: localState.changed ? 1 : 0, top: localState.changed ? 0 : -30 }} transition={{ type: 'timing', delay: 20 }}>
+                                        <Text numberOfLines={1} style={{...style.today, ...(state.actualIndexData < 0 ? style.todayNow : {})}}>{localState.currentName}</Text>
                                     </MotiView>
-                                    <MotiView from={{ opacity: changed ? 0 : 1, top: changed ? -30 : 0 }} animate={{ opacity: changed ? 1 : 0, top: changed ? 0 : -30 }} transition={{ type: 'timing', delay: 50 }}>
-                                        <Text style={style.temperature}>{currentData.temperature}°C</Text>
+                                    <MotiView from={{ opacity: localState.changed ? 0 : 1, top: localState.changed ? -30 : 0 }} animate={{ opacity: localState.changed ? 1 : 0, top: localState.changed ? 0 : -30 }} transition={{ type: 'timing', delay: 50 }}>
+                                        <Text style={style.temperature}>{localState.currentData.temperature}°C</Text>
                                     </MotiView>
-                                    <MotiView from={{ opacity: changed ? 0 : 1, top: changed ? -30 : 0 }} animate={{ opacity: changed ? 1 : 0, top: changed ? 0 : -30 }} transition={{ type: 'timing', delay: 220 }}>
-                                        <Text numberOfLines={1} style={style.feeling}>{_(state.lang,'Odczuwalna')}: <Text style={{...style.feeling, ...style.feelingValue, ...(currentData.feelslike !== currentData.temperature ? style.feelingValueBad : {})}}>{currentData.feelslike}°C</Text></Text>
+                                    <MotiView from={{ opacity: localState.changed ? 0 : 1, top: localState.changed ? -30 : 0 }} animate={{ opacity: localState.changed ? 1 : 0, top: localState.changed ? 0 : -30 }} transition={{ type: 'timing', delay: 220 }}>
+                                        <Text numberOfLines={1} style={style.feeling}>{_(state.lang,'Odczuwalna')}: <Text style={{...style.feeling, ...style.feelingValue, ...(localState.currentData.feelslike !== localState.currentData.temperature ? style.feelingValueBad : {})}}>{localState.currentData.feelslike}°C</Text></Text>
                                     </MotiView>
-                                    <MotiView from={{ opacity: changed ? 0 : 1, top: changed ? -70 : 0 }} animate={{ opacity: changed ? 1 : 0, top: changed ? 0 : -70 }} transition={{ type: 'timing', delay: 100 }}>
-                                        <IcoWeather size={height <= maxResponsiveHeight ? 160 : 220} icon={currentData.icon} />
+                                    <MotiView from={{ opacity: localState.changed ? 0 : 1, top: localState.changed ? -70 : 0 }} animate={{ opacity: localState.changed ? 1 : 0, top: localState.changed ? 0 : -70 }} transition={{ type: 'timing', delay: 100 }}>
+                                        <IcoWeather size={height <= maxResponsiveHeight ? 160 : 220} icon={localState.currentData.icon} />
                                     </MotiView>
-                                    <MotiView from={{ opacity: changed ? 0 : 1, top: changed ? -30 : 0 }} animate={{ opacity: changed ? 1 : 0, top: changed ? 0 : -30 }} transition={{ type: 'timing', delay: 120 }}>
-                                        <Text style={style.pressure}>{_(state.lang,'Ciśnienie')}: <Text style={{...style.pressure, ...style.pressureValue}}>{currentData.pressure}</Text>hPa</Text>
-                                        <Text style={style.pressure}>{_(state.lang,'Wilgotność')}: <Text style={{...style.pressure, ...style.pressureValue}}>{currentData.humidity}</Text>%</Text>
-                                        {currentData.wind &&
-                                            <Text style={style.pressure}>{_(state.lang,'Wiatr')}: <Text style={{...style.pressure, ...style.pressureValue}}>{currentData.wind} {_(state.lang,'km/h')}</Text></Text>
+                                    <MotiView from={{ opacity: localState.changed ? 0 : 1, top: localState.changed ? -30 : 0 }} animate={{ opacity: localState.changed ? 1 : 0, top: localState.changed ? 0 : -30 }} transition={{ type: 'timing', delay: 120 }}>
+                                        <Text style={style.pressure}>{_(state.lang,'Ciśnienie')}: <Text style={{...style.pressure, ...style.pressureValue}}>{localState.currentData.pressure}</Text>hPa</Text>
+                                        <Text style={style.pressure}>{_(state.lang,'Wilgotność')}: <Text style={{...style.pressure, ...style.pressureValue}}>{localState.currentData.humidity}</Text>%</Text>
+                                        {localState.currentData.wind &&
+                                            <Text style={style.pressure}>{_(state.lang,'Wiatr')}: <Text style={{...style.pressure, ...style.pressureValue}}>{localState.currentData.wind} {_(state.lang,'km/h')}</Text></Text>
                                         }
                                     </MotiView>
-                                    {(currentData.hours && currentData.hours.length) > 0 &&
+                                    {(localState.currentData.hours && localState.currentData.hours.length) > 0 &&
                                         <MotiView style={style.chartLayer} from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', delay: 500 }}>
-                                            <TemperatureDayChart hourData={currentData.hours} />
+                                            <TemperatureDayChart hourData={localState.currentData.hours} />
                                         </MotiView>
                                     }
                                 </>
@@ -194,7 +217,7 @@ const Home: React.FC<PropsHome> = ({ weather:state, addData, setDataCurrent, set
                                                 labels: [],
                                                 datasets: [
                                                     {
-                                                        data: daysDataTemperatures
+                                                        data: localState.daysDataTemperatures
                                                     }
                                                 ]
                                             }}
@@ -247,7 +270,7 @@ const Home: React.FC<PropsHome> = ({ weather:state, addData, setDataCurrent, set
                         lang={state.lang}
                         getWord={_}
                         setCurrent={setCurrentDataDay}
-                        currentDatatime={currentData.datetime}
+                        currentDatatime={localState.currentData.datetime}
                     />
                 </Swiper>
             </LinearGradient>
@@ -267,7 +290,7 @@ const mapDispatchToProps = (dispatch: any) => (
     }, dispatch)
 );
 
-export default connect<any>(mapStateToProps, mapDispatchToProps)(Home);
+export default connect(mapStateToProps, mapDispatchToProps)(Home);
 
 const style = StyleSheet.create({
     safeArea: {

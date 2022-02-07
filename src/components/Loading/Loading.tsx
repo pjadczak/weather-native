@@ -1,13 +1,14 @@
-import React , { useState, useEffect, useContext } from 'react';
 import { View, ActivityIndicator, StyleSheet, Dimensions } from 'react-native'; 
-import Text from '../Text/Text';
+import React from 'react';
 
-const { width, height } = Dimensions.get('screen');
+import Text from '../Text/Text';
 
 interface Props {
     title?: String,
     style?: object
 }
+
+const { width, height } = Dimensions.get('screen');
 
 const Loading: React.FC<Props> = ({ title = '', style: styleProp = {} }) => {
 

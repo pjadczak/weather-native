@@ -24,11 +24,8 @@ const DaysView: React.FC<PropsType> = ({ daysData, lang, getWord, setCurrent, cu
     useEffect(() => {
         const minData = [...daysData.sort((a,b) => a.temp - b.temp)];
         const maxData = [...daysData.sort((a,b) => b.temp - a.temp)];
-        // console.log('min/max: ',minData[0].temp,maxData[0].temp,(maxData[0].temp+Math.abs(minData[0].temp)));
         setMinMax({ min: minData[0].temp, max: maxData[0].temp});
     },[daysData]);
-
-    // console.log('minMax: ',minMax);
 
     return (
         <View style={style.main}>

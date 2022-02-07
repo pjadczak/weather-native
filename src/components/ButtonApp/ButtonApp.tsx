@@ -1,5 +1,6 @@
-import React , { useState, useEffect, useContext } from 'react';
 import { StyleSheet, TouchableHighlight, View } from 'react-native';
+import React from 'react';
+
 import Text from '../../components/Text/Text';
 
 type ComponentaTypes = {

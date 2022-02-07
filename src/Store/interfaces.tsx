@@ -2,13 +2,14 @@ export type CurrentDataType = {
     temperature: number;
     wind: number;
     cloudy: number;
-    name: string;
     humidity: number;
     pressure: number;
     feelslike: number;
     hours: HourType[]
     icon: string,
-    datetime: string
+    datetime: string,
+    snow: string,
+    snowdepth: string
 }
 
 export type HourType = {

@@ -67,7 +67,6 @@ const TemperatureDayChart: React.FC<ParamsType> = ({ hourData }) => {
                         </View>
                     )
                 }}
-                // withDots={false}
                 yAxisInterval={1} // optional, defaults to 1
                 chartConfig={{
                     color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
@@ -75,7 +74,6 @@ const TemperatureDayChart: React.FC<ParamsType> = ({ hourData }) => {
                     propsForDots: {
                         r: 3,
                         strokeWidth: 1,
-                        // stroke: "#ffa726"
                     }
                 }}
                 bezier

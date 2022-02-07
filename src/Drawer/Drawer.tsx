@@ -7,11 +7,11 @@ import React, { useEffect, useState } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 
-import { setLang, setFullState } from '../Store/actions';
 import { dictionary } from '../actions/dictionary';
 import { WeatherType } from '../Store/interfaces';
 import { getWord } from '../actions/dictionary';
 import { displayName } from '../../app.json';
+import { setLang } from '../Store/actions';
 import Text from '../components/Text/Text';
 
 const ImgLogo = require('../../assets/images/logo.png');

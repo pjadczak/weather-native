@@ -1,13 +1,13 @@
-import React , { useState, useEffect, useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import Config from "react-native-config";
 import { Provider } from 'react-redux';
-import { createStore } from 'redux';
-import 'react-native-reanimated';
 import { LogBox } from 'react-native';
+import { createStore } from 'redux';
+import React from 'react';
 
-import Store from './Store/Store';
+import 'react-native-reanimated';
+
 import Routing from './Routing/Routing';
+import Store from './Store/Store';
 
 /*
  * Error stupid warning react-native-gesture-handler
@@ -19,10 +19,6 @@ LogBox.ignoreLogs([
 const store = createStore(Store);
 
 const App: React.FC = () => {
-
-    useEffect(() => {
-        // console.log('Config: ',Config);
-    },[]);
 
     return (
         <Provider store={store}>

@@ -3,7 +3,7 @@ import Icon from 'react-native-vector-icons/dist/MaterialCommunityIcons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
-import React , { useState, useEffect } from 'react';
+import React , { useEffect, useReducer } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 
@@ -17,30 +17,39 @@ import Loading from '../../components/Loading/Loading';
 import { PropsWeather } from '../../Store/interfaces';
 import { getWord } from '../../actions/dictionary';
 import Text from '../../components/Text/Text';
-
-const ImgLogo = require('../../../assets/images/logo.png');
+import Store from './Store';
 
 export interface PropsSettings extends PropsWeather {
     addData: (position: object, actualCity: object, dataType: String, dataWeather: object, dayIndex?: number|null) => void;
     setGpsPermission: (gpsPermission: boolean) => void;
 };
 
+export type LocalStateType = {
+    loader: boolean,
+    switchType: boolean,
+    city: string,
+    position: { latitude: number, longitude: number }
+}
+
+const defaultLocalState = {
+    loader: false,
+    switchType: false,
+    city: '',
+    position: null
+} 
+
 const MIN_CITY_LENGTH = 3;
+const ImgLogo = require('../../../assets/images/logo.png');
 
 const Settings: React.FC<PropsSettings> = ({ weather:state, addData, setGpsPermission }) => {
 
     const _ = getWord;
-    const [readingPermissions, setReadingPermissions] = useState(false);
-    const [loader, setLoader] = useState(false);
-    const [switchType, setSwitchType] = useState(false);
-    const [city, setCity] = useState('');
-    const [position, setPosition] = useState(null);// current position
+    const [localState, setLocalState] = useReducer(Store, defaultLocalState);
     const navigation = useNavigation<any>();
     const isFocused = useIsFocused();
 
     useEffect(() => {
 
-        setReadingPermissions(true);
         checkPermition((status: boolean|null) => {
             
             if (status === true){
@@ -49,15 +58,12 @@ const Settings: React.FC<PropsSettings> = ({ weather:state, addData, setGpsPermi
 
                 getLocation(result => {
                     if (result){
-                        setPosition(result);
+                        setStateData('position',result);
                     }
                 });
 
             } else if (status === false){
                 setGpsPermission(false);
-                setReadingPermissions(false);
-            } else {
-                setReadingPermissions(false);
             }
 
         });
@@ -74,7 +80,7 @@ const Settings: React.FC<PropsSettings> = ({ weather:state, addData, setGpsPermi
         };
 
         if (state.actualCity && state.actualCity.shortName !==''){
-            setCity(state.actualCity.shortName);
+            setStateData('city',state.actualCity.shortName);
         }
 
         BackHandler.addEventListener('hardwareBackPress', onBackPress);
@@ -83,20 +89,24 @@ const Settings: React.FC<PropsSettings> = ({ weather:state, addData, setGpsPermi
     },[isFocused]);
 
     useEffect(() => {
-        // console.log('zmiana: ',state.position);
         if (state.position || state.actualCity){
             AsyncStorage.setItem('dataState',JSON.stringify(state));
         }
     },[state.actualCity, state.position]);
 
+    // set local state
+    const setStateData = (dataType: string, data: any ): void => {
+        setLocalState({ type: 'SET_DATA', dataType, data });
+    }
+
     const handleAddResult = (): void => {
         // get lat/lon by find city data
 
-        if (!switchType && city.length <=2) return;
+        if (!localState.switchType && localState.city.length <=2) return;
 
-        setLoader(true);
-        setDataWeather(!switchType,city, position, state.actualCity, addData, (result: number) => {
-            setLoader(false);
+        setStateData('loader',true);
+        setDataWeather(!localState.switchType,localState.city, localState.position, state.actualCity, addData, (result: number) => {
+            setStateData('loader',false);
             if (result>0){
                 navigation.navigate("Home");
             } else if (result === 0){
@@ -127,22 +137,22 @@ const Settings: React.FC<PropsSettings> = ({ weather:state, addData, setGpsPermi
                 <View style={style.inputLayer}>
                     <Text style={style.textLabel}>{_(state.lang,'Wprowadź nazwę miejscowości')}</Text>
                     <TextInput
-                        value={city}
-                        onChangeText={text => setCity(text)}
-                        style={{...style.textInput, ...(switchType ? style.textInputDisabled : {}), ...(Platform.OS === 'ios' ? style.textInputIos : {})}}
-                        editable={!switchType}
+                        value={localState.city}
+                        onChangeText={text => setStateData('city',text)}
+                        style={{...style.textInput, ...(localState.switchType ? style.textInputDisabled : {}), ...(Platform.OS === 'ios' ? style.textInputIos : {})}}
+                        editable={!localState.switchType}
                     />
                 </View>
 
-                {position &&
+                {localState.position &&
                     <View style={style.layerPosition}>
                         <Text style={style.textAlternative}>{_(state.lang,'... lub Pobierz pogodę z danych Twojego położenia')}</Text>
                         <Switch
-                            value={switchType}
-                            onValueChange={v => setSwitchType(v)}
+                            value={localState.switchType}
+                            onValueChange={v => setStateData('switchType',v)}
                         />
 
-                        <Text style={{...style.textPosition, ...(switchType ? style.textPositionActive : {})}}>{_(state.lang,'Twoje położenie')}: <Text style={{...style.textPositionValue, ...(switchType ? style.textPositionValueActive : {})}}>{position.latitude} , {position.longitude}</Text></Text>
+                        <Text style={{...style.textPosition, ...(localState.switchType ? style.textPositionActive : {})}}>{_(state.lang,'Twoje położenie')}: <Text style={{...style.textPositionValue, ...(localState.switchType ? style.textPositionValueActive : {})}}>{localState.position.latitude} , {localState.position.longitude}</Text></Text>
                     </View>
                 }
 
@@ -164,7 +174,7 @@ const Settings: React.FC<PropsSettings> = ({ weather:state, addData, setGpsPermi
             </View>
 
             </LinearGradient>
-            {loader && <Loading title={!switchType ? _(state.lang,"Szukam lokacji") : _(state.lang,"Szukam pozycji GPS")} />}
+            {localState.loader && <Loading title={!localState.switchType ? _(state.lang,"Szukam lokacji") : _(state.lang,"Szukam pozycji GPS")} />}
         </SafeAreaView>
     );
 }
