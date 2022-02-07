@@ -60,6 +60,10 @@ const About: React.FC<PropsWeather> = ({ weather:state }) => {
         Linking.openURL('https://www.visualcrossing.com/');
     }
 
+    const handlePressGithub = (): void => {
+        Linking.openURL('https://github.com/pjadczak/weather-native');
+    }
+
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient style={style.main} colors={backgroundColors}>
@@ -101,7 +105,7 @@ const About: React.FC<PropsWeather> = ({ weather:state }) => {
 
                             <Text style={style.weatherInfo}>
                                 {_(state.lang,'Źródło aplikacji na githubie:')}{" "}
-                                <TouchableWithoutFeedback onPress={handlePressWeatherProvider}>
+                                <TouchableWithoutFeedback onPress={handlePressGithub}>
                                     <Text style={{...style.weatherInfo, ...style.weatherInfoValue}}>Github project</Text>
                                 </TouchableWithoutFeedback>
                             </Text>

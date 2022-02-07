@@ -1,6 +1,6 @@
 {
-  "name": "WeatherNative",
-  "version": "0.0.1",
+  "name": "Weather Native",
+  "version": "1.0",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
