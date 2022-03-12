@@ -1,5 +1,6 @@
 import Icon from 'react-native-vector-icons/dist/MaterialCommunityIcons';
 import { View, StyleSheet, Image } from 'react-native';
+import { isEqual } from 'lodash';
 import React from 'react';
 
 const ImgClearDay = require('../../../assets/images/icons/clear-day.png');
@@ -69,7 +70,7 @@ const IcoWeather: React.FC<Props> = ({ icon, size }) => {
         </View>
     );
 }
-export default IcoWeather;
+export default React.memo(IcoWeather, isEqual);
 
 const style = StyleSheet.create({
     main: {

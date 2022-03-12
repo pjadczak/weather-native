@@ -194,11 +194,11 @@ const Home: React.FC<PropsHome> = ({ weather:state, addData, setDataCurrent, set
                                     <MotiView from={{ opacity: localState.changed ? 0 : 1, top: localState.changed ? -30 : 0 }} animate={{ opacity: localState.changed ? 1 : 0, top: localState.changed ? 0 : -30 }} transition={{ type: 'timing', delay: 120 }}>
                                         <Text style={style.pressure}>{_(state.lang,'Ciśnienie')}: <Text style={{...style.pressure, ...style.pressureValue}}>{localState.currentData.pressure}</Text>hPa</Text>
                                         <Text style={style.pressure}>{_(state.lang,'Wilgotność')}: <Text style={{...style.pressure, ...style.pressureValue}}>{localState.currentData.humidity}</Text>%</Text>
-                                        {localState.currentData.wind &&
+                                        {localState.currentData.wind > 0 &&
                                             <Text style={style.pressure}>{_(state.lang,'Wiatr')}: <Text style={{...style.pressure, ...style.pressureValue}}>{localState.currentData.wind} {_(state.lang,'km/h')}</Text></Text>
                                         }
                                     </MotiView>
-                                    {(localState.currentData.hours && localState.currentData.hours.length) > 0 &&
+                                    {(localState.currentData.hours?.length > 0) &&
                                         <MotiView style={style.chartLayer} from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', delay: 500 }}>
                                             <TemperatureDayChart hourData={localState.currentData.hours} />
                                         </MotiView>

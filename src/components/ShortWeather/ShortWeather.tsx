@@ -1,4 +1,5 @@
 import { View, StyleSheet, Dimensions } from 'react-native';
+import { isEqual } from 'lodash';
 import React from 'react';
 
 import { maxResponsiveHeight } from '../../actions/variables';
@@ -25,7 +26,7 @@ const ShortWeather: React.FC<Props> = ({ title, weather, temperature, style: sty
         </View>
     );
 }
-export default ShortWeather;
+export default React.memo(ShortWeather, isEqual);
 
 const style = StyleSheet.create({
     main: {

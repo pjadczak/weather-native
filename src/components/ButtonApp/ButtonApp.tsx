@@ -1,4 +1,5 @@
 import { StyleSheet, TouchableHighlight, View } from 'react-native';
+import { isEqual } from 'lodash';
 import React from 'react';
 
 import Text from '../../components/Text/Text';
@@ -20,7 +21,7 @@ const ButtonApp: React.FC<ComponentaTypes> = ({ title, action, styleText = {}, s
         </TouchableHighlight>
     );
 }
-export default ButtonApp;
+export default React.memo(ButtonApp, isEqual);
 
 const style = StyleSheet.create({
     main: {

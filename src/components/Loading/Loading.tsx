@@ -1,4 +1,5 @@
 import { View, ActivityIndicator, StyleSheet, Dimensions } from 'react-native'; 
+import { isEqual } from 'lodash';
 import React from 'react';
 
 import Text from '../Text/Text';
@@ -19,7 +20,7 @@ const Loading: React.FC<Props> = ({ title = '', style: styleProp = {} }) => {
         </View>
     );
 }
-export default Loading;
+export default React.memo(Loading, isEqual);
 
 const style = StyleSheet.create({
     main: {
