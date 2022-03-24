@@ -30,7 +30,7 @@ export const setDataWeather = (getByCity: boolean, city: String, position: Posit
                 callBack(0);
             }
         });
-    } else {
+    } else if (position?.latitude && position?.longitude){
         // get weather data by lat/lon
         readApiDataPosition(position.latitude, position.longitude,result => {
             addData({ 
